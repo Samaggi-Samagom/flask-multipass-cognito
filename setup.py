@@ -15,6 +15,9 @@ setup(
     entry_points={
         'flask_multipass.auth_providers': {
             'cognito = flask_multipass_cognito.auth:CognitoAuthProvider'
+        },
+        'flask_multipass.identity_providers': {
+            'cognito = flask_multipass_cognito.identity:CognitoIdentityProvider'
         }
     }
 )
