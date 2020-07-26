@@ -1,5 +1,6 @@
 from flask_multipass.providers.authlib import AuthlibAuthProvider
 from flask import request
+from werkzeug.urls import url_encode
 
 
 class CognitoAuthProvider(AuthlibAuthProvider):
