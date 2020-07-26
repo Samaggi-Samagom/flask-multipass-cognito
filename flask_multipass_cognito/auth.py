@@ -1,5 +1,5 @@
 from flask_multipass.providers.authlib import AuthlibAuthProvider
-from flask import request
+from flask import request, redirect
 from werkzeug.urls import url_encode
 
 
