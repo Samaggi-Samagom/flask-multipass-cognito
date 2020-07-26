@@ -1,4 +1,5 @@
 from flask_multipass.providers.authlib import AuthlibAuthProvider
+from flask import request
 
 
 class CognitoAuthProvider(AuthlibAuthProvider):
