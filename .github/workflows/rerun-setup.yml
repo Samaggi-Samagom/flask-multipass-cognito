@@ -1,0 +1,22 @@
+name: Rerun setup.py
+
+on:
+  workflow_dispatch:
+
+jobs:
+  rerun:
+    runs-on: ubuntu-latest
+    steps:
+    - name: run setup.py on ssh host
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.BOOM_INDICO_HOST }}
+        username: ${{ secrets.BOOM_INDICO_USERNAME }}
+        key: ${{ secrets.BOOM_INDICO_KEY }}
+        fingerprint: ${{ secrets.BOOM_INDICO_FINGERPRINT }}
+        script: |
+          source ~/.venv/bin/activate
+          cd ~/plugins_dev/flask-multipass-cognito/
+          python setup.py develop
+          deactivate
+          touch ~/web/indico.wsgi
