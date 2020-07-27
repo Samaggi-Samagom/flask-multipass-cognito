@@ -58,7 +58,7 @@ class CognitoGroup(Group):
             for user in response['Users']:
                 identity_data = _get_confirmed_identity_data(user)
                 if identity_data is not None:
-                    identities.append(IdentityInfo(identity_data))
+                    identities.append(IdentityInfo(self.provider, identifier=identity_data['sub'], **identity_data))
         return identities
 
     def has_member(self, identifier):
@@ -139,7 +139,7 @@ class CognitoIdentityProvider(AuthlibIdentityProvider):
         if identity_data is None:
             return None
         else:
-            return IdentityInfo(self, identifier=identifier, **identity_data)
+            return IdentityInfo(self, identifier=identity_data['sub'], **identity_data)
 
     def get_identity_groups(self, sub):
         identity_data = self._query_single_user_by_sub(sub)
