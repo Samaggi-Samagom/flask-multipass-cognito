@@ -10,7 +10,8 @@ setup(
     author_email='cto@samaggisamagom.com',
     packages=find_packages(),
     install_requires=[
-        'Flask-Multipass[authlib]==0.3.dev5'
+        'Flask-Multipass[authlib]==0.3.dev5',
+        'boto3'
     ],
     entry_points={
         'flask_multipass.auth_providers': {
