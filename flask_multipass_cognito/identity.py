@@ -72,7 +72,7 @@ class CognitoGroup(Group):
             Username=identity_data['username']
         )
         for response in page_iterator:
-            for group in response['Group']:
+            for group in response['Groups']:
                 if group['GroupName'] == self.name:
                     return True
         return False
