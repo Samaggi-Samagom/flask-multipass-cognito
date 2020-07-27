@@ -2,10 +2,11 @@ from flask_multipass.providers.authlib import AuthlibIdentityProvider
 from flask_multipass.data import IdentityInfo
 from flask_multipass.group import Group
 from flask_multipass.exceptions import GroupRetrievalFailed
+
 from indico.core.logger import Logger
-from boto3.session import \
-    Session as Boto3Session, \
-    _get_default_session as DefaultBoto3Session
+
+import boto3
+from boto3.session import Session as Boto3Session
 from CognitoIdentityProvider.Client.exceptions import ResourceNotFoundException
 
 
@@ -122,7 +123,7 @@ class CognitoIdentityProvider(AuthlibIdentityProvider):
         if boto3_session_kwargs is not None:
             self.cognito_client = Boto3Session(**boto3_session_kwargs).client('cognito-idp')
         else:
-            self.cognito_client = DefaultBoto3Session().client('cognito-idp')
+            self.cognito_client = boto3.client('cognito-idp')
 
     def get_identity_from_auth(self, auth_info):
         identityInfo = super(CognitoIdentityProvider, self).get_identity_from_auth(auth_info)
