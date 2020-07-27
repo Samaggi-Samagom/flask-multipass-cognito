@@ -49,15 +49,16 @@ class CognitoGroup(Group):
         return self.provider.user_pool_id
 
     def get_members(self):
-        response = self.cognito_client.get_paginator('list_users_in_group').paginate(
+        page_iterator = self.cognito_client.get_paginator('list_users_in_group').paginate(
             UserPoolId=self.user_pool_id,
             GroupName=self.name
         )
         identities = list()
-        for user in response['Users']:
-            identity_data = _get_confirmed_identity_data(user)
-            if identity_data is not None:
-                identities.append(IdentityInfo(identity_data))
+        for response in page_iterator:
+            for user in response['Users']:
+                identity_data = _get_confirmed_identity_data(user)
+                if identity_data is not None:
+                    identities.append(IdentityInfo(identity_data))
         return identities
 
     def has_member(self, identifier):
@@ -66,21 +67,11 @@ class CognitoGroup(Group):
             raise GroupRetrievalFailed(
                 "The user with sub={} does not exist or is not confirmed or not enabled".format(identifier)
             )
-        # We should paginate manually because we may return early and hence
-        # not need to paginate through the entire data
-        response = self.cognito_client.admin_list_groups_for_user(
+        page_iterator = self.cognito_client.get_paginator('admin_list_groups_for_user').paginate(
             UserPoolId=self.user_pool_id,
             Username=identity_data['username']
         )
-        for group in response['Group']:
-            if group['GroupName'] == self.name:
-                return True
-        while 'NextToken' in response:
-            response = self.cognito_client.admin_list_groups_for_user(
-                UserPoolId=self.user_pool_id,
-                Username=identity_data['username'],
-                NextToken=response['NextToken']
-            )
+        for response in page_iterator:
             for group in response['Group']:
                 if group['GroupName'] == self.name:
                     return True
@@ -131,15 +122,16 @@ class CognitoIdentityProvider(AuthlibIdentityProvider):
         return identityInfo
 
     def _query_single_user_by_sub(self, sub):
-        response = self.cognito_client.get_paginator('list_users').paginate(
+        page_iterator = self.cognito_client.get_paginator('list_users').paginate(
             UserPoolId=self.user_pool_id,
             Filter="sub = \"{}\"".format(sub)
         )
-        for user in response['Users']:
-            identity_data = _get_confirmed_identity_data(user)
-            if identity_data is not None:
-                if identity_data['sub'] == sub:
-                    return identity_data
+        for response in page_iterator:
+            for user in response['Users']:
+                identity_data = _get_confirmed_identity_data(user)
+                if identity_data is not None:
+                    if identity_data['sub'] == sub:
+                        return identity_data
         return None
 
     def get_identity(self, identifier):
@@ -155,13 +147,15 @@ class CognitoIdentityProvider(AuthlibIdentityProvider):
             raise GroupRetrievalFailed(
                 "The user with sub={} does not exist or is not confirmed or not enabled".format(sub)
             )
-        # We should paginate manually because we may return early and hence
-        # not need to paginate through the entire data
-        response = self.cognito_client.get_paginator('admin_list_groups_for_user').paginate(
+        page_iterator = self.cognito_client.get_paginator('admin_list_groups_for_user').paginate(
             UserPoolId=self.user_pool_id,
             Username=identity_data['username']
         )
-        return [self.group_class(self, group['GroupName']) for group in response['Groups']]
+        groups = list()
+        for response in page_iterator:
+            groups.extend([self.group_class(self, group['GroupName'])
+                           for group in response['Groups']])
+        return groups
 
     def get_group(self, name):
         try:
@@ -177,10 +171,12 @@ class CognitoIdentityProvider(AuthlibIdentityProvider):
                 raise error
 
     def search_groups(self, name, exact=False):
-        response = self.cognito_client.get_paginator('list_groups').paginate(
+        page_iterator = self.cognito_client.get_paginator('list_groups').paginate(
             UserPoolId=self.user_pool_id
         )
-        group_names = [group['GroupName'] for group in response['Groups']]
+        group_names = list()
+        for response in page_iterator:
+            group_names.extend([group['GroupName'] for group in response['Groups']])
         if exact:
             return [self.group_class(self, group_name) for group_name in group_names if name == group_name]
         else:
