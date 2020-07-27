@@ -59,7 +59,7 @@ class CognitoGroup(Group):
                 identity_data = _get_confirmed_identity_data(user)
                 if identity_data is not None:
                     identities.append(IdentityInfo(self.provider, identifier=identity_data['sub'], **identity_data))
-        return identities
+        return iter(identities)
 
     def has_member(self, identifier):
         identity_data = self.provider._query_single_user_by_sub(identifier)
@@ -155,7 +155,7 @@ class CognitoIdentityProvider(AuthlibIdentityProvider):
         for response in page_iterator:
             groups.extend([self.group_class(self, group['GroupName'])
                            for group in response['Groups']])
-        return groups
+        return iter(groups)
 
     def get_group(self, name):
         try:
