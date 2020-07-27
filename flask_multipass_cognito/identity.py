@@ -7,7 +7,7 @@ from indico.core.logger import Logger
 
 import boto3
 from boto3.session import Session as Boto3Session
-from CognitoIdentityProvider.Client.exceptions import ResourceNotFoundException
+from botocore.exceptions import ClientError as BotocoreClientError
 
 
 def _convert_user_attributes(user):
@@ -170,8 +170,11 @@ class CognitoIdentityProvider(AuthlibIdentityProvider):
                 UserPoolId=self.user_pool_id
             )
             return self.group_class(self, response['Group']['GroupName'])
-        except ResourceNotFoundException:
-            return None
+        except BotocoreClientError as error:
+            if error.response['Error']['Code'] == 'ResourceNotFoundException':
+                return None
+            else:
+                raise error
 
     def search_groups(self, name, exact=False):
         response = self.cognito_client.get_paginator('list_groups').paginate(
