@@ -53,13 +53,11 @@ class CognitoGroup(Group):
             UserPoolId=self.user_pool_id,
             GroupName=self.name
         )
-        identities = list()
         for response in page_iterator:
             for user in response['Users']:
                 identity_data = _get_confirmed_identity_data(user)
                 if identity_data is not None:
-                    identities.append(IdentityInfo(self.provider, identifier=identity_data['sub'], **identity_data))
-        return iter(identities)
+                    yield IdentityInfo(self.provider, identifier=identity_data['sub'], **identity_data)
 
     def has_member(self, identifier):
         identity_data = self.provider._query_single_user_by_sub(identifier)
@@ -151,11 +149,9 @@ class CognitoIdentityProvider(AuthlibIdentityProvider):
             UserPoolId=self.user_pool_id,
             Username=identity_data['username']
         )
-        groups = list()
         for response in page_iterator:
-            groups.extend([self.group_class(self, group['GroupName'])
-                           for group in response['Groups']])
-        return iter(groups)
+            for group in response['Groups']:
+                yield self.group_class(self, group['GroupName'])
 
     def get_group(self, name):
         try:
@@ -174,11 +170,12 @@ class CognitoIdentityProvider(AuthlibIdentityProvider):
         page_iterator = self.cognito_client.get_paginator('list_groups').paginate(
             UserPoolId=self.user_pool_id
         )
-        group_names = list()
         for response in page_iterator:
-            group_names.extend([group['GroupName'] for group in response['Groups']])
-        if exact:
-            return [self.group_class(self, group_name) for group_name in group_names if name == group_name]
-        else:
-            return [self.group_class(self, group_name) for group_name in group_names if name in group_name]
+            for group in response['Groups']:
+                if exact:
+                    if name == group['GroupName']:
+                        yield self.group_class(self, group['GroupName'])
+                else:
+                    if name in group['GroupName']:
+                        yield self.group_class(self, group['GroupName'])
 
