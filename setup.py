@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='Flask-Multipass-Cognito',
-    version='0.1.dev0',
+    version='0.1.0',
     url='https://github.com/Samaggi-Samagom/flask-multipass-cognito',
     description='A Flask Multipass Authentication and Identity providers for Amazon Cognito',
     author='Samaggi Samagom',
